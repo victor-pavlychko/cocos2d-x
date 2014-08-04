@@ -89,8 +89,11 @@ public:
     void addGLProgram(GLProgram* program, const std::string &key);
     CC_DEPRECATED_ATTRIBUTE void addProgram(GLProgram* program, const std::string &key) { addGLProgram(program, key); }
 
-private:
+    // victor@timecode: move this inside director
     bool init();
+    // victor@timecode: end
+
+private:
     void loadDefaultGLProgram(GLProgram *program, int type);
 
 //    Dictionary* _programs;

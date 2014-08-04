@@ -68,6 +68,11 @@ THE SOFTWARE.
 #define CC_ENABLE_GL_STATE_CACHE 1
 #endif
 
+// victor@timecode: temporary disable GL state cahce
+#undef CC_ENABLE_GL_STATE_CACHE
+#define CC_ENABLE_GL_STATE_CACHE 0
+// victor@timecode: end
+
 /** @def CC_FIX_ARTIFACTS_BY_STRECHING_TEXEL
 If enabled, the texture coordinates will be calculated by using this formula:
 - texCoord.left = (rect.origin.x*2+1) / (texture.wide*2);
