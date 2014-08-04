@@ -62,6 +62,7 @@ THE SOFTWARE.
 #include "math/CCMath.h"
 #include "CCApplication.h"
 #include "CCGLViewImpl.h"
+#include "CCGLView.h"
 
 /**
  Position of the FPS
@@ -79,6 +80,7 @@ NS_CC_BEGIN
 
 // singleton stuff
 static DisplayLinkDirector *s_SharedDirector = nullptr;
+static std::set<Director *> s_RegisteredDirectors;
 
 #define kDefaultFPS        60  // 60 frames per second
 extern const char* cocos2dVersion(void);
@@ -90,15 +92,56 @@ const char *Director::EVENT_AFTER_UPDATE = "director_after_update";
 
 Director* Director::getInstance()
 {
+    // victor@timecode: add support for multiple directors
+/*
     if (!s_SharedDirector)
     {
         s_SharedDirector = new (std::nothrow) DisplayLinkDirector();
         CCASSERT(s_SharedDirector, "FATAL: Not enough memory");
         s_SharedDirector->init();
     }
+*/
+
+    CCASSERT(s_SharedDirector, "FATAL: No active director!");
+    // victor@timecode: end
 
     return s_SharedDirector;
 }
+
+// victor@timecode: add support for multiple directors
+Director* Director::newInstance()
+{
+    Director *director = new (std::nothrow) DisplayLinkDirector();
+    CCASSERT(director, "FATAL: Not enough memory");
+    activateDirector(director);
+    director->init();
+    registerDirector(director);
+    return director;
+}
+
+void Director::registerDirector(Director *director)
+{
+    s_RegisteredDirectors.insert(director);
+}
+
+void Director::unregisterDirector(Director *director)
+{
+    s_RegisteredDirectors.erase(director);
+}
+
+void Director::activateDirector(Director *director)
+{
+    s_SharedDirector = (DisplayLinkDirector *)director;
+}
+
+void Director::enumerateDirectors(std::function<void(Director*)> enumerator)
+{
+    for (auto director: s_RegisteredDirectors)
+    {
+        enumerator(director);
+    }
+}
+// victor@timecode: end
 
 Director::Director()
 {
@@ -161,6 +204,11 @@ bool Director::init(void)
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_WINRT)
     _console = new Console;
 #endif
+
+    // victor@timecode: support multiple directors
+    _programCache = nullptr;
+    // victor@timecode: end
+
     return true;
 }
 
@@ -197,6 +245,20 @@ Director::~Director(void)
 
     s_SharedDirector = nullptr;
 }
+
+// victor@timecode: support multiple directors
+GLProgramCache* Director::getProgramCache() const
+{
+    if (_programCache == nullptr)
+    {
+        _programCache = new GLProgramCache();
+        _programCache->init();
+    }
+    
+    return _programCache;
+}
+// victor@timecode: end
+
 
 void Director::setDefaultValues(void)
 {

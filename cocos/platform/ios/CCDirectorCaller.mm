@@ -30,6 +30,7 @@
 #import <OpenGLES/EAGL.h>
 #import "CCDirectorCaller.h"
 #import "CCDirector.h"
+#import "CCGLView.h"
 #import "CCEAGLView.h"
 
 static id s_sharedDirectorCaller;
@@ -80,7 +81,10 @@ static id s_sharedDirectorCaller;
     
     displayLink = [NSClassFromString(@"CADisplayLink") displayLinkWithTarget:self selector:@selector(doCaller:)];
     [displayLink setFrameInterval: self.interval];
-    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    // victor@timecode: fix scrolling
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    //[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    // victor@timecode: end
 }
 
 -(void) stopMainLoop
@@ -98,14 +102,25 @@ static id s_sharedDirectorCaller;
         
     displayLink = [NSClassFromString(@"CADisplayLink") displayLinkWithTarget:self selector:@selector(doCaller:)];
     [displayLink setFrameInterval: self.interval];
-    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    // victor@timecode: fix scrolling
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    //[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    // victor@timecode: end
 }
                       
 -(void) doCaller: (id) sender
 {
+    cocos2d::Director::enumerateDirectors([](cocos2d::Director *director) {
+        cocos2d::Director::activateDirector(director);
+        [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
+        director->mainLoop();
+        cocos2d::Director::activateDirector(nullptr);
+    });
+/*
     cocos2d::Director* director = cocos2d::Director::getInstance();
     [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
     director->mainLoop();
+*/
 }
 
 @end

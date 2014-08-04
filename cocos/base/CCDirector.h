@@ -40,6 +40,7 @@ THE SOFTWARE.
 #include <stack>
 #include "math/CCMath.h"
 #include "platform/CCGLView.h"
+#include "renderer/CCGLProgramCache.h"
 
 NS_CC_BEGIN
 
@@ -137,6 +138,15 @@ public:
     /** returns a shared instance of the director */
     static Director* getInstance();
 
+    
+    // victor@timecode: add support for multiple directors
+    static Director* newInstance();
+    static void registerDirector(Director *director);
+    static void unregisterDirector(Director *director);
+    static void activateDirector(Director *director);
+    static void enumerateDirectors(std::function<void(Director*)> enumerator);
+    // victor@timecode: end
+    
     /** @deprecated Use getInstance() instead */
     CC_DEPRECATED_ATTRIBUTE static Director* sharedDirector() { return Director::getInstance(); }
     /**
@@ -398,6 +408,10 @@ public:
     Console* getConsole() const { return _console; }
 #endif
 
+    // victor@timecode: support multiple directors
+    GLProgramCache* getProgramCache() const;
+    // victor@timecode: end
+
     /* Gets delta time since last tick to main loop */
 	float getDeltaTime() const;
     
@@ -513,6 +527,9 @@ protected:
 
     // GLView will recreate stats labels to fit visible rect
     friend class GLView;
+    // victor@timecode: support multiple directors
+    mutable GLProgramCache* _programCache;
+    // victor@timecode: end
 };
 
 /** 

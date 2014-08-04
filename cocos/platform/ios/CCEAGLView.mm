@@ -66,6 +66,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 #import <QuartzCore/QuartzCore.h>
 #import "CCGLViewImpl.h"
+#import "CCGLView.h"
 #import "CCEAGLView.h"
 #import "CCES2Renderer.h"
 #import "CCDirector.h"
@@ -73,6 +74,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #import "CCTouch.h"
 #import "CCIMEDispatcher.h"
 #import "OpenGL_Internal.h"
+#import "CCGLView.h"
 //CLASS IMPLEMENTATIONS:
 
 #define IOS_MAX_TOUCHES_COUNT     10
@@ -250,6 +252,11 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void) layoutSubviews
 {
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    [EAGLContext setCurrentContext:self.context];
+    // victor@timecode: end
+
     [renderer_ resizeFromLayer:(CAEAGLLayer*)self.layer];
     size_ = [renderer_ backingSize];
 
@@ -264,7 +271,21 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     // Avoid flicker. Issue #350
     //[director performSelectorOnMainThread:@selector(drawScene) withObject:nil waitUntilDone:YES];
     cocos2d::Director::getInstance()->drawScene();
+
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector(nullptr);
+    // victor@timecode: end
 }
+
+// victor@timecode: support multiple directors
+-(void) updateScene
+{
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    [EAGLContext setCurrentContext:self.context];
+    cocos2d::Director::getInstance()->drawScene();
+    cocos2d::Director::activateDirector(nullptr);
+}
+// victor@timecode: end
 
 - (void) swapBuffers
 {
@@ -389,6 +410,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #pragma mark CCEAGLView - Touch Delegate
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    // victor@timecode: end
+    
     if (isKeyboardShown_)
     {
         [self handleTouchesAfterKeyboardShow];
@@ -412,6 +437,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    // victor@timecode: end
+    
     UITouch* ids[IOS_MAX_TOUCHES_COUNT] = {0};
     float xs[IOS_MAX_TOUCHES_COUNT] = {0.0f};
     float ys[IOS_MAX_TOUCHES_COUNT] = {0.0f};
@@ -430,6 +459,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    // victor@timecode: end
+    
     UITouch* ids[IOS_MAX_TOUCHES_COUNT] = {0};
     float xs[IOS_MAX_TOUCHES_COUNT] = {0.0f};
     float ys[IOS_MAX_TOUCHES_COUNT] = {0.0f};
@@ -448,6 +481,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    // victor@timecode: support multiple directors
+    cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
+    // victor@timecode: end
+    
     UITouch* ids[IOS_MAX_TOUCHES_COUNT] = {0};
     float xs[IOS_MAX_TOUCHES_COUNT] = {0.0f};
     float ys[IOS_MAX_TOUCHES_COUNT] = {0.0f};

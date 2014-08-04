@@ -142,6 +142,11 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 @property(nonatomic,readwrite) BOOL multiSampling;
 
+// victor@timecode: support multiple directors
+@property (nonatomic, assign) void *director;
+
+-(void) updateScene;
+// victor@timecode: end
 
 /** CCEAGLView uses double-buffer. This method swaps the buffers */
 -(void) swapBuffers;

@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "renderer/CCGLProgram.h"
 #include "renderer/ccShaders.h"
 #include "base/ccMacros.h"
+#include "base/CCDirector.h"
 
 NS_CC_BEGIN
 
@@ -59,6 +60,9 @@ static GLProgramCache *_sharedGLProgramCache = 0;
 
 GLProgramCache* GLProgramCache::getInstance()
 {
+    // victor@timecode: support multiple directors
+    return Director::getInstance()->getProgramCache();
+/*
     if (!_sharedGLProgramCache) {
         _sharedGLProgramCache = new GLProgramCache();
         if (!_sharedGLProgramCache->init())
@@ -67,6 +71,8 @@ GLProgramCache* GLProgramCache::getInstance()
         }
     }
     return _sharedGLProgramCache;
+*/
+    // victor@timecode: end
 }
 
 void GLProgramCache::destroyInstance()
