@@ -750,6 +750,10 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void)onUIKeyboardNotification:(NSNotification *)notif;
 {
+    // victor@timecode: temporary remove
+    return;
+    // victor@timecode: end
+    
     NSString * type = notif.name;
     
     NSDictionary* info = [notif userInfo];
