@@ -39,10 +39,17 @@ static const int MAX_ACTIVE_TEXTURE = 16;
 
 namespace
 {
-    static GLuint s_currentProjectionMatrix = -1;
-    static uint32_t s_attributeFlags = 0;  // 32 attributes max
+    // victor@timecode: move this to gl state cache
+    //static GLuint s_currentProjectionMatrix = -1;
+    //static uint32_t s_attributeFlags = 0;  // 32 attributes max
+    // victor@timecode: end
 
 #if CC_ENABLE_GL_STATE_CACHE
+
+    // victor@timecode: move this to gl state cache
+    static GLuint s_currentProjectionMatrix = -1;
+    static uint32_t s_attributeFlags = 0;  // 32 attributes max
+    // victor@timecode: end
 
     static GLuint    s_currentShaderProgram = -1;
     static GLuint    s_currentBoundTexture[MAX_ACTIVE_TEXTURE] =  {(GLuint)-1,(GLuint)-1,(GLuint)-1,(GLuint)-1, (GLuint)-1,(GLuint)-1,(GLuint)-1,(GLuint)-1, (GLuint)-1,(GLuint)-1,(GLuint)-1,(GLuint)-1, (GLuint)-1,(GLuint)-1,(GLuint)-1,(GLuint)-1, };
@@ -62,10 +69,18 @@ namespace GL {
 void invalidateStateCache( void )
 {
     Director::getInstance()->resetMatrixStack();
-    s_currentProjectionMatrix = -1;
-    s_attributeFlags = 0;
+    
+    // victor@timecode: move this to gl state cache
+    //s_currentProjectionMatrix = -1;
+    //s_attributeFlags = 0;
+    // victor@timecode: end
 
 #if CC_ENABLE_GL_STATE_CACHE
+    // victor@timecode: move this to gl state cache
+    s_currentProjectionMatrix = -1;
+    s_attributeFlags = 0;
+    // victor@timecode: end
+
     s_currentShaderProgram = -1;
     for( int i=0; i < MAX_ACTIVE_TEXTURE; i++ )
     {
@@ -223,7 +238,14 @@ void enableVertexAttribs(uint32_t flags)
     for(int i=0; i < MAX_ATTRIBUTES; i++) {
         unsigned int bit = 1 << i;
         bool enabled = flags & bit;
+        // victor@timecode: move this to gl state cache
+#if CC_ENABLE_GL_STATE_CACHE
         bool enabledBefore = s_attributeFlags & bit;
+#else
+        bool enabledBefore = !enabled;
+#endif
+        // victor@timecode: end
+
         if(enabled != enabledBefore) {
             if( enabled )
                 glEnableVertexAttribArray(i);
@@ -231,14 +253,22 @@ void enableVertexAttribs(uint32_t flags)
                 glDisableVertexAttribArray(i);
         }
     }
+    // victor@timecode: move this to gl state cache
+#if CC_ENABLE_GL_STATE_CACHE
     s_attributeFlags = flags;
+#endif
+    // victor@timecode: end
 }
 
 // GL Uniforms functions
 
 void setProjectionMatrixDirty( void )
 {
+    // victor@timecode: move this to gl state cache
+#if CC_ENABLE_GL_STATE_CACHE
     s_currentProjectionMatrix = -1;
+#endif // CC_ENABLE_GL_STATE_CACHE
+    // victor@timecode: end
 }
 
 } // Namespace GL
