@@ -53,10 +53,10 @@ public:
 	void removeAllGLProgramState();
     void removeUnusedGLProgramState();
 
-protected:
     GLProgramStateCache();
     ~GLProgramStateCache();
     
+protected:
     Map<GLProgram*, GLProgramState*> _glProgramStates;
     static GLProgramStateCache* s_instance;
 };

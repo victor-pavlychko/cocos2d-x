@@ -39,6 +39,7 @@ THE SOFTWARE.
 #include "platform/CCGL.h"
 #include "platform/CCGLView.h"
 #include "renderer/CCGLProgramCache.h"
+#include "renderer/CCGLProgramStateCache.h"
 
 NS_CC_BEGIN
 
@@ -99,6 +100,7 @@ public:
     virtual ~DirectorSharegroup();
     
     void prepareSharegroup();
+
     TextureCache *getTextureCache() { return _textureCache; }
     GLProgramCache* getProgramCache();
 
@@ -107,7 +109,7 @@ private:
     TextureCache *_textureCache;
 
     //texture cache belongs to this sharegroup
-    GLProgramCache* _programCache;
+    GLProgramCache *_programCache;
     
 private:
     void initTextureCache();
@@ -433,7 +435,8 @@ public:
 #endif
 
     // victor@timecode: support multiple directors
-    GLProgramCache *getProgramCache() const;
+    GLProgramCache *getProgramCache() const { return _sharegroup->getProgramCache(); }
+    GLProgramStateCache *getProgramStateCache() const;
     DirectorSharegroup *getSharegroup() const { return _sharegroup; }
     // victor@timecode: end
 
@@ -553,6 +556,7 @@ protected:
 
     // victor@timecode: support multiple directors
     mutable DirectorSharegroup *_sharegroup;
+    mutable GLProgramStateCache *_programStateCache;
     // victor@timecode: end
 };
 

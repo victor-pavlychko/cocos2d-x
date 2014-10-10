@@ -235,6 +235,8 @@ bool Director::initWithSharegroup(DirectorSharegroup *sharegroup)
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_WINRT)
     _console = new (std::nothrow) Console;
 #endif
+    
+    _programStateCache = nullptr;
 
     return true;
 }
@@ -287,7 +289,7 @@ void DirectorSharegroup::initProgramCache()
 
 void DirectorSharegroup::destroyProgramCache()
 {
-    _programCache->release();
+    CC_SAFE_RELEASE_NULL(_programCache);
 }
 
 
@@ -297,10 +299,16 @@ GLProgramCache* DirectorSharegroup::getProgramCache()
     return _programCache;
 }
 
-GLProgramCache* Director::getProgramCache() const
+GLProgramStateCache *Director::getProgramStateCache() const
 {
-    return _sharegroup->getProgramCache();
+    if (!_programStateCache)
+    {
+        _programStateCache = new (std::nothrow) GLProgramStateCache();
+    }
+    
+    return _programStateCache;
 }
+
 // victor@timecode: end
 
 
@@ -1114,6 +1122,8 @@ void Director::purgeDirector()
     GL::invalidateStateCache();
     
     _sharegroup->release();
+
+    CC_SAFE_DELETE(_programStateCache);
 
     CHECK_GL_ERROR_DEBUG();
     

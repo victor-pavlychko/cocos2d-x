@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 #include "renderer/CCGLProgramState.h"
 #include "renderer/CCGLProgram.h"
+#include "base/CCDirector.h"
 
 
 NS_CC_BEGIN
@@ -43,10 +44,16 @@ GLProgramStateCache::~GLProgramStateCache()
 
 GLProgramStateCache* GLProgramStateCache::getInstance()
 {
+    // victor@timecode: support multiple directors
+    return Director::getInstance()->getProgramStateCache();
+
+/*
     if (s_instance == nullptr)
         s_instance = new (std::nothrow) GLProgramStateCache();
     
     return s_instance;
+*/
+    // victor@timecode: end
 }
 
 void GLProgramStateCache::destroyInstance()
