@@ -39,6 +39,9 @@ Controller g_aTestNames[] = {
 	{ "Actions - Ease", [](){return new ActionsEaseTestScene();} },
 	{ "Actions - Progress", [](){return new ProgressActionsTestScene(); } },
 	{ "Audio - CocosDenshion", []() { return new CocosDenshionTestScene(); } },
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC || CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+    { "Audio - NewAudioEngine", []() { return new AudioEngineTestScene(); } },
+#endif
 	{ "Box2d - Basic", []() { return new Box2DTestScene(); } },
 	{ "Box2d - TestBed", []() { return new Box2dTestBedScene(); } },
 	{ "Bugs", []() { return new BugsTestScene(); } },
@@ -60,11 +63,14 @@ Controller g_aTestNames[] = {
 	{ "FileUtils", []() { return new FileUtilsTestScene(); } },
 	{ "Fonts", []() { return new FontTestScene(); } },
 	{ "Interval", [](){return new IntervalTestScene(); } },
+    { "Node: BillBoard Test", [](){  return new BillBoardTestScene(); }},
+    { "Node: Camera 3D Test", [](){  return new Camera3DTestScene(); }},
 	{ "Node: Clipping", []() { return new ClippingNodeTestScene(); } },
 	{ "Node: Draw", [](){return new DrawPrimitivesTestScene();} },
     { "Node: Label - New API", [](){return new AtlasTestSceneNew(); } },
 	{ "Node: Label - Old API", [](){return new AtlasTestScene(); } },
 	{ "Node: Layer", [](){return new LayerTestScene();} },
+    { "Node: Light", [](){return new LightTestScene();} },
 	{ "Node: Menu", [](){return new MenuTestScene();} },
 	{ "Node: MotionStreak", [](){return new MotionStreakTestScene();} },
 	{ "Node: Node", [](){return new CocosNodeTestScene();} },
@@ -99,6 +105,7 @@ Controller g_aTestNames[] = {
 	{ "Touches", [](){return new PongScene();} },
 	{ "Transitions", [](){return new TransitionsTestScene();} },
     { "Unit Test", []() { return new UnitTestScene(); }},
+    { "URL Open Test", []() { return new OpenURLTestScene(); } },
 	{ "UserDefault", []() { return new UserDefaultTestScene(); } },
 	{ "Zwoptex", []() { return new ZwoptexTestScene(); } },
 };
@@ -125,7 +132,7 @@ TestController::TestController()
     auto menu =Menu::create(closeItem, nullptr);
 
     menu->setPosition( Vec2::ZERO );
-    closeItem->setPosition(Vec2( VisibleRect::right().x - 30, VisibleRect::top().y - 30));
+    closeItem->setPosition(VisibleRect::right().x - 30, VisibleRect::top().y - 30);
 
     // add menu items for tests
     TTFConfig ttfConfig("fonts/arial.ttf", 24);
@@ -136,7 +143,7 @@ TestController::TestController()
         auto menuItem = MenuItemLabel::create(label, CC_CALLBACK_1(TestController::menuCallback, this));
 
         _itemMenu->addChild(menuItem, i + 10000);
-        menuItem->setPosition( Vec2( VisibleRect::center().x, (VisibleRect::top().y - (i + 1) * LINE_SPACE) ));
+        menuItem->setPosition(VisibleRect::center().x, (VisibleRect::top().y - (i + 1) * LINE_SPACE));
     }
 
     _itemMenu->setContentSize(Size(VisibleRect::getVisibleRect().size.width, (g_testCount + 1) * (LINE_SPACE)));
@@ -216,7 +223,7 @@ void TestController::onTouchMoved(Touch* touch, Event  *event)
 
     if (nextPos.y > ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height))
     {
-        _itemMenu->setPosition(Vec2(0, ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height)));
+        _itemMenu->setPosition(0, ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height));
         return;
     }
 
@@ -241,7 +248,7 @@ void TestController::onMouseScroll(Event *event)
 
     if (nextPos.y > ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height))
     {
-        _itemMenu->setPosition(Vec2(0, ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height)));
+        _itemMenu->setPosition(0, ((g_testCount + 1)* LINE_SPACE - VisibleRect::getVisibleRect().size.height));
         return;
     }
 
@@ -361,7 +368,7 @@ void TestController::addConsoleAutoTest()
                 sched->performFunctionInCocosThread( [&]()
                 {
                     auto scene = Scene::create();
-                    auto layer = new TestController();
+                    auto layer = new (std::nothrow) TestController();
                     scene->addChild(layer);
                     layer->release();
                     Director::getInstance()->replaceScene(scene);

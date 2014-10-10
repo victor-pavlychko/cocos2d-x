@@ -80,7 +80,8 @@ static std::function<Layer*()> createFunctions[] =
     CL(LabelIssue4428Test),
     CL(LabelIssue4999Test),
     CL(LabelLineHeightTest),
-    CL(LabelAdditionalKerningTest)
+    CL(LabelAdditionalKerningTest),
+    CL(LabelIssue8492Test)
 };
 
 #define MAX_LAYER    (sizeof(createFunctions) / sizeof(createFunctions[0]))
@@ -145,7 +146,7 @@ void AtlasDemoNew::onEnter()
 
 void AtlasDemoNew::restartCallback(Ref* sender)
 {
-    auto s = new AtlasTestSceneNew();
+    auto s = new (std::nothrow) AtlasTestSceneNew();
     s->addChild(restartAtlasActionNew()); 
 
     Director::getInstance()->replaceScene(s);
@@ -154,7 +155,7 @@ void AtlasDemoNew::restartCallback(Ref* sender)
 
 void AtlasDemoNew::nextCallback(Ref* sender)
 {
-    auto s = new AtlasTestSceneNew();
+    auto s = new (std::nothrow) AtlasTestSceneNew();
     s->addChild( nextAtlasActionNew() );
     Director::getInstance()->replaceScene(s);
     s->release();
@@ -162,7 +163,7 @@ void AtlasDemoNew::nextCallback(Ref* sender)
 
 void AtlasDemoNew::backCallback(Ref* sender)
 {
-    auto s = new AtlasTestSceneNew();
+    auto s = new (std::nothrow) AtlasTestSceneNew();
     s->addChild( backAtlasActionNew() );
     Director::getInstance()->replaceScene(s);
     s->release();
@@ -231,7 +232,7 @@ LabelFNTColorAndOpacity::LabelFNTColorAndOpacity()
     label2->setPosition( VisibleRect::center() );
     label3->setPosition( VisibleRect::rightTop() );
     
-    schedule( schedule_selector(LabelFNTColorAndOpacity::step) );//:@selector(step:)];
+    schedule(CC_CALLBACK_1(LabelFNTColorAndOpacity::step, this), "step_key");
 }
 
 void LabelFNTColorAndOpacity::step(float dt)
@@ -263,12 +264,18 @@ std::string LabelFNTColorAndOpacity::subtitle() const
 LabelFNTSpriteActions::LabelFNTSpriteActions()
 {
     _time = 0;
+    
+    auto s = Director::getInstance()->getWinSize();
+    
+    auto drawNode = DrawNode::create();
+    drawNode->drawLine( Vec2(0, s.height/2), Vec2(s.width, s.height/2), Color4F(1.0, 1.0, 1.0, 1.0) );
+    drawNode->drawLine( Vec2(s.width/2, 0), Vec2(s.width/2, s.height), Color4F(1.0, 1.0, 1.0, 1.0) );
+    addChild(drawNode, -1);
 
     // Upper Label
     auto label = Label::createWithBMFont("fonts/bitmapFontTest.fnt", "Bitmap Font Atlas");
     addChild(label);
     
-    auto s = Director::getInstance()->getWinSize();
     
     label->setPosition( Vec2(s.width/2, s.height/2) ); 
     
@@ -307,29 +314,7 @@ LabelFNTSpriteActions::LabelFNTSpriteActions()
     auto lastChar = (Sprite*) label2->getLetter(3);
     lastChar->runAction( rot_4ever->clone() );
     
-    schedule( schedule_selector(LabelFNTSpriteActions::step), 0.1f);
-}
-
-void LabelFNTSpriteActions::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
-{
-    _renderCmd.init(_globalZOrder);
-    _renderCmd.func = CC_CALLBACK_0(LabelFNTSpriteActions::onDraw, this, transform, flags);
-    renderer->addCommand(&_renderCmd);
-
-}
-
-void LabelFNTSpriteActions::onDraw(const Mat4 &transform, uint32_t flags)
-{
-    Director* director = Director::getInstance();
-    CCASSERT(nullptr != director, "Director is null when seting matrix stack");
-    director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
-    
-    auto s = Director::getInstance()->getWinSize();
-    DrawPrimitives::drawLine( Vec2(0, s.height/2), Vec2(s.width, s.height/2) );
-    DrawPrimitives::drawLine( Vec2(s.width/2, 0), Vec2(s.width/2, s.height) );
-    
-    director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+    schedule(CC_CALLBACK_1(LabelFNTSpriteActions::step, this), 0.1f, "step_key");
 }
 
 void LabelFNTSpriteActions::step(float dt)
@@ -520,7 +505,7 @@ LabelFNTandTTFEmpty::LabelFNTandTTFEmpty()
     addChild(label3, 0, kTagBitmapAtlas3);
     label3->setPosition(Vec2(s.width/2, 100));
 
-    schedule(schedule_selector(LabelFNTandTTFEmpty::updateStrings), 1.0f);
+    schedule(CC_CALLBACK_1(LabelFNTandTTFEmpty::updateStrings, this), 1.0f, "update_strings_key");
 
     setEmpty = false;
 }
@@ -894,35 +879,11 @@ LabelFNTBounds::LabelFNTBounds()
     addChild(layer, -10);
     
     // LabelBMFont
-    label1 = Label::createWithBMFont("fonts/boundsTestFont.fnt", "Testing Glyph Designer", TextHAlignment::CENTER,s.width);
+    auto label1 = Label::createWithBMFont("fonts/boundsTestFont.fnt", "Testing Glyph Designer", TextHAlignment::CENTER,s.width);
     addChild(label1);
     label1->setPosition(Vec2(s.width/2, s.height/2));
-}
 
-std::string LabelFNTBounds::title() const
-{
-    return "New Label + .FNT + Bounds";
-}
-
-std::string LabelFNTBounds::subtitle() const
-{
-    return "You should see string enclosed by a box";
-}
-
-void LabelFNTBounds::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
-{
-    _renderCmd.init(_globalZOrder);
-    _renderCmd.func = CC_CALLBACK_0(LabelFNTBounds::onDraw, this, transform, flags);
-    renderer->addCommand(&_renderCmd);
-}
-
-void LabelFNTBounds::onDraw(const Mat4 &transform, uint32_t flags)
-{
-    Director* director = Director::getInstance();
-    CCASSERT(nullptr != director, "Director is null when seting matrix stack");
-    director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
-    
+    auto drawNode = DrawNode::create();
     auto labelSize = label1->getContentSize();
     auto origin    = Director::getInstance()->getWinSize();
     
@@ -936,9 +897,18 @@ void LabelFNTBounds::onDraw(const Mat4 &transform, uint32_t flags)
         Vec2(labelSize.width + origin.width, labelSize.height + origin.height),
         Vec2(origin.width, labelSize.height + origin.height)
     };
-    DrawPrimitives::drawPoly(vertices, 4, true);
-    
-    director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+    drawNode->drawPoly(vertices, 4, true, Color4F(1.0, 1.0, 1.0, 1.0));
+    addChild(drawNode);
+}
+
+std::string LabelFNTBounds::title() const
+{
+    return "New Label + .FNT + Bounds";
+}
+
+std::string LabelFNTBounds::subtitle() const
+{
+    return "You should see string enclosed by a box";
 }
 
 LabelTTFLongLineWrapping::LabelTTFLongLineWrapping()
@@ -1387,7 +1357,7 @@ LabelCharMapTest::LabelCharMapTest()
     label2->setPosition( Vec2(10,200) );
     label2->setOpacity( 32 );
 
-    schedule(schedule_selector(LabelCharMapTest::step)); 
+    schedule(CC_CALLBACK_1(LabelCharMapTest::step, this), "step_key");
 }
 
 void LabelCharMapTest::step(float dt)
@@ -1442,7 +1412,7 @@ LabelCharMapColorTest::LabelCharMapColorTest()
 
     _time = 0;
 
-    schedule( schedule_selector(LabelCharMapColorTest::step) ); //:@selector(step:)];
+    schedule(CC_CALLBACK_1(LabelCharMapColorTest::step, this), "step_key");
 }
 
 void LabelCharMapColorTest::actionFinishCallback()
@@ -1508,16 +1478,8 @@ LabelTTFOldNew::LabelTTFOldNew()
     auto label2 = Label::createWithTTF(ttfConfig, "Cocos2d-x Label Test");
     addChild(label2, 0, kTagBitmapAtlas2);
     label2->setPosition(Vec2(s.width/2, delta * 2));
-}
 
-void LabelTTFOldNew::onDraw(const Mat4 &transform, uint32_t flags)
-{
-    Director* director = Director::getInstance();
-    CCASSERT(nullptr != director, "Director is null when seting matrix stack");
-    director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
-
-    auto label1 = (Label*)getChildByTag(kTagBitmapAtlas1);
+    auto drawNode = DrawNode::create();
     auto labelSize = label1->getContentSize();
     auto origin    = Director::getInstance()->getWinSize();
     
@@ -1531,16 +1493,14 @@ void LabelTTFOldNew::onDraw(const Mat4 &transform, uint32_t flags)
         Vec2(labelSize.width + origin.width, labelSize.height + origin.height),
         Vec2(origin.width, labelSize.height + origin.height)
     };
-    DrawPrimitives::setDrawColor4B(Color4B::RED.r,Color4B::RED.g,Color4B::RED.b,Color4B::RED.a);
-    DrawPrimitives::drawPoly(vertices, 4, true);
-
-    auto label2 = (Label*)getChildByTag(kTagBitmapAtlas2);
+    drawNode->drawPoly(vertices, 4, true, Color4F(1.0, 0.0, 0.0, 1.0));
+    
     labelSize = label2->getContentSize();
     origin    = Director::getInstance()->getWinSize();
-
+    
     origin.width = origin.width   / 2 - (labelSize.width / 2);
     origin.height = origin.height / 2 - (labelSize.height / 2);
-
+    
     Vec2 vertices2[4]=
     {
         Vec2(origin.width, origin.height),
@@ -1548,17 +1508,9 @@ void LabelTTFOldNew::onDraw(const Mat4 &transform, uint32_t flags)
         Vec2(labelSize.width + origin.width, labelSize.height + origin.height),
         Vec2(origin.width, labelSize.height + origin.height)
     };
-    DrawPrimitives::setDrawColor4B(Color4B::WHITE.r,Color4B::WHITE.g,Color4B::WHITE.b,Color4B::WHITE.a);
-    DrawPrimitives::drawPoly(vertices2, 4, true);
+    drawNode->drawPoly(vertices2, 4, true, Color4F(1.0, 1.0, 1.0, 1.0));
     
-    director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-}
-
-void LabelTTFOldNew::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
-{
-    _renderCmd.init(_globalZOrder);
-    _renderCmd.func = CC_CALLBACK_0(LabelTTFOldNew::onDraw, this, transform, flags);
-    renderer->addCommand(&_renderCmd);
+    addChild(drawNode);
 }
 
 std::string LabelTTFOldNew::title() const
@@ -1862,4 +1814,22 @@ std::string LabelAdditionalKerningTest::title() const
 std::string LabelAdditionalKerningTest::subtitle() const
 {
     return "Testing additional kerning of label";
+}
+
+LabelIssue8492Test::LabelIssue8492Test()
+{
+    auto label = Label::createWithBMFont("fonts/bitmapFontChinese.fnt", "中国中国中国中国中国");
+    label->setDimensions(5,100);
+    label->setPosition(VisibleRect::center());
+    addChild(label);
+}
+
+std::string LabelIssue8492Test::title() const
+{
+    return "Reorder issue #8492";
+}
+
+std::string LabelIssue8492Test::subtitle() const
+{
+    return "Work fine when dimensions are not enough to fit one character";
 }

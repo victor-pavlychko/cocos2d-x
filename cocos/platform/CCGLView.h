@@ -64,6 +64,16 @@ enum class ResolutionPolicy
     UNKNOWN,
 };
 
+struct GLContextAttrs
+{
+    int redBits;
+    int greenBits;
+    int blueBits;
+    int alphaBits;
+    int depthBits;
+    int stencilBits;
+};
+
 NS_CC_BEGIN
 
 /**
@@ -95,8 +105,17 @@ public:
 
     /** Open or close IME keyboard , subclass must implement this method. */
     virtual void setIMEKeyboardState(bool open) = 0;
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WP8 || CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
+    virtual void setIMEKeyboardState(bool open, std::string str) = 0;
+#endif
     
     virtual bool windowShouldClose() { return false; };
+
+    //static method and member so that we can modify it on all platforms before create OpenGL context
+    static void setGLContextAttrs(GLContextAttrs& glContextAttrs);
+    static GLContextAttrs getGLContextAttrs();
+    static GLContextAttrs _glContextAttrs;
 
     /**
      * Polls input events. Subclass must implement methods if platform
@@ -117,11 +136,16 @@ public:
      */
     virtual void setFrameSize(float width, float height);
 
+    /** Set and get zoom factor for frame. This two methods are for
+     debugging big resolution (e.g.new ipad) app on desktop.*/
+    virtual void setFrameZoomFactor(float zoomFactor) {}
     virtual float getFrameZoomFactor() const { return 1.0; }
     
     /** Get retina factor */
     virtual int getRetinaFactor() const { return 1; }
-    
+
+    /** only works on ios platform*/
+    virtual bool setContentScaleFactor(float scaleFactor) { return false; }
     virtual float getContentScaleFactor() const { return 1.0; }
     
     /** returns whether or not the view is in Retina Display mode */
@@ -200,6 +224,11 @@ public:
      * Get the opengl view port rectangle.
      */
     const Rect& getViewPortRect() const;
+    
+    /**
+     * Get list of all active touches
+     */
+    std::vector<Touch*> getAllTouches() const;
 
     /**
      * Get scale factor of the horizontal direction.

@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include <vector>
 #include <unordered_map>
 
-#include "base/CCPlatformMacros.h"
+#include "platform/CCPlatformMacros.h"
 #include "base/ccTypes.h"
 #include "base/CCValue.h"
 #include "base/CCData.h"
@@ -294,6 +294,12 @@ public:
      *  @note This method is used internally.
      */
     virtual ValueMap getValueMapFromFile(const std::string& filename);
+
+    /**
+     *  Converts the contents of a file to a ValueMap.
+     *  @note This method is used internally.
+     */
+    virtual ValueMap getValueMapFromData(const char* filedata, int filesize);
     
     /**
      *  Write a ValueMap to a plist file.

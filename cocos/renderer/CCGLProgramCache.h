@@ -95,6 +95,8 @@ public:
 
 private:
     void loadDefaultGLProgram(GLProgram *program, int type);
+    
+    std::string getShaderMacrosForLight() const;
 
 //    Dictionary* _programs;
     std::unordered_map<std::string, GLProgram*> _programs;
