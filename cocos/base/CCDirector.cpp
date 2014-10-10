@@ -107,10 +107,15 @@ Director* Director::getInstance()
 // victor@timecode: add support for multiple directors
 Director* Director::newInstance()
 {
+    return newInstanceWithSharegroup(nullptr);
+}
+
+Director* Director::newInstanceWithSharegroup(DirectorSharegroup *sharegroup)
+{
     Director *director = new (std::nothrow) DisplayLinkDirector();
     CCASSERT(director, "FATAL: Not enough memory");
     activateDirector(director);
-    director->init();
+    director->initWithSharegroup(sharegroup);
     registerDirector(director);
     return director;
 }
@@ -137,7 +142,24 @@ void Director::enumerateDirectors(std::function<void(Director*)> enumerator)
         enumerator(director);
     }
 }
+
+const std::set<Director *> &Director::allRegisteredDirectors()
+{
+    return s_RegisteredDirectors;
+}
 // victor@timecode: end
+
+DirectorSharegroup::~DirectorSharegroup()
+{
+    destroyProgramCache();
+    destroyTextureCache();
+}
+
+void DirectorSharegroup::prepareSharegroup()
+{
+    initTextureCache();
+    //initProgramCache();
+}
 
 Director::Director()
 {
@@ -145,6 +167,17 @@ Director::Director()
 
 bool Director::init(void)
 {
+    return initWithSharegroup(nullptr);
+}
+
+bool Director::initWithSharegroup(DirectorSharegroup *sharegroup)
+{
+    if (!sharegroup)
+    {
+        sharegroup = new DirectorSharegroup();
+        sharegroup->autorelease();
+    }
+
     setDefaultValues();
 
     // scenes
@@ -190,9 +223,11 @@ bool Director::init(void)
     _eventProjectionChanged = new (std::nothrow) EventCustom(EVENT_PROJECTION_CHANGED);
     _eventProjectionChanged->setUserData(this);
 
+    _sharegroup = sharegroup;
+    _sharegroup->retain();
+    _sharegroup->prepareSharegroup();
 
     //init TextureCache
-    initTextureCache();
     initMatrixStack();
 
     _renderer = new (std::nothrow) Renderer;
@@ -200,10 +235,6 @@ bool Director::init(void)
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_WINRT)
     _console = new (std::nothrow) Console;
 #endif
-
-    // victor@timecode: support multiple directors
-    _programCache = nullptr;
-    // victor@timecode: end
 
     return true;
 }
@@ -243,15 +274,32 @@ Director::~Director(void)
 }
 
 // victor@timecode: support multiple directors
-GLProgramCache* Director::getProgramCache() const
+void DirectorSharegroup::initProgramCache()
 {
-    if (_programCache == nullptr)
+    if (_programCache != nullptr)
     {
-        _programCache = new GLProgramCache();
-        _programCache->init();
+        return;
     }
     
+    _programCache = new GLProgramCache();
+    _programCache->init();
+}
+
+void DirectorSharegroup::destroyProgramCache()
+{
+    _programCache->release();
+}
+
+
+GLProgramCache* DirectorSharegroup::getProgramCache()
+{
+    initProgramCache();
     return _programCache;
+}
+
+GLProgramCache* Director::getProgramCache() const
+{
+    return _sharegroup->getProgramCache();
 }
 // victor@timecode: end
 
@@ -460,11 +508,16 @@ void Director::setOpenGLView(GLView *openGLView)
 
 TextureCache* Director::getTextureCache() const
 {
-    return _textureCache;
+    return _sharegroup->getTextureCache();
 }
 
-void Director::initTextureCache()
+void DirectorSharegroup::initTextureCache()
 {
+    if (_textureCache)
+    {
+        return;
+    }
+    
 #ifdef EMSCRIPTEN
     _textureCache = new (std::nothrow) TextureCacheEmscripten();
 #else
@@ -472,7 +525,7 @@ void Director::initTextureCache()
 #endif // EMSCRIPTEN
 }
 
-void Director::destroyTextureCache()
+void DirectorSharegroup::destroyTextureCache()
 {
     if (_textureCache)
     {
@@ -730,11 +783,11 @@ void Director::purgeCachedData(void)
     if (s_SharedDirector->getOpenGLView())
     {
         SpriteFrameCache::getInstance()->removeUnusedSpriteFrames();
-        _textureCache->removeUnusedTextures();
+        _sharegroup->getTextureCache()->removeUnusedTextures();
 
         // Note: some tests such as ActionsTest are leaking refcounted textures
         // There should be no test textures left in the cache
-        log("%s\n", _textureCache->getCachedTextureInfo().c_str());
+        log("%s\n", _sharegroup->getTextureCache()->getCachedTextureInfo().c_str());
     }
     FileUtils::getInstance()->purgeCachedEntries();
 }
@@ -1060,7 +1113,7 @@ void Director::purgeDirector()
     
     GL::invalidateStateCache();
     
-    destroyTextureCache();
+    _sharegroup->release();
 
     CHECK_GL_ERROR_DEBUG();
     
@@ -1218,7 +1271,7 @@ void Director::createStatsLabel()
         CC_SAFE_RELEASE_NULL(_FPSLabel);
         CC_SAFE_RELEASE_NULL(_drawnBatchesLabel);
         CC_SAFE_RELEASE_NULL(_drawnVerticesLabel);
-        _textureCache->removeTextureForKey("/cc_fps_images");
+        _sharegroup->getTextureCache()->removeTextureForKey("/cc_fps_images");
         FileUtils::getInstance()->purgeCachedEntries();
     }
 
@@ -1235,7 +1288,7 @@ void Director::createStatsLabel()
         return;
     }
 
-    texture = _textureCache->addImage(image, "/cc_fps_images");
+    texture = _sharegroup->getTextureCache()->addImage(image, "/cc_fps_images");
     CC_SAFE_RELEASE(image);
 
     /*

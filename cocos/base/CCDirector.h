@@ -29,6 +29,7 @@ THE SOFTWARE.
 #define __CCDIRECTOR_H__
 
 #include <stack>
+#include <set>
 
 #include "platform/CCPlatformMacros.h"
 #include "base/CCRef.h"
@@ -91,6 +92,30 @@ enum class MATRIX_STACK_TYPE
     MATRIX_STACK_TEXTURE
 };
 
+class CC_DLL DirectorSharegroup : public Ref
+{
+public:
+    DirectorSharegroup(): _textureCache(nullptr), _programCache(nullptr) {}
+    virtual ~DirectorSharegroup();
+    
+    void prepareSharegroup();
+    TextureCache *getTextureCache() { return _textureCache; }
+    GLProgramCache* getProgramCache();
+
+private:
+    //texture cache belongs to this sharegroup
+    TextureCache *_textureCache;
+
+    //texture cache belongs to this sharegroup
+    GLProgramCache* _programCache;
+    
+private:
+    void initTextureCache();
+    void destroyTextureCache();
+    void initProgramCache();
+    void destroyProgramCache();
+};
+
 class CC_DLL Director : public Ref
 {
 private:
@@ -134,14 +159,15 @@ public:
     
     /** returns a shared instance of the director */
     static Director* getInstance();
-
     
     // victor@timecode: add support for multiple directors
     static Director* newInstance();
+    static Director* newInstanceWithSharegroup(DirectorSharegroup *sharegroup);
     static void registerDirector(Director *director);
     static void unregisterDirector(Director *director);
     static void activateDirector(Director *director);
     static void enumerateDirectors(std::function<void(Director*)> enumerator);
+    static const std::set<Director *> &allRegisteredDirectors();
     // victor@timecode: end
     
     /** @deprecated Use getInstance() instead */
@@ -156,6 +182,7 @@ public:
      */
     virtual ~Director();
     virtual bool init();
+    virtual bool initWithSharegroup(DirectorSharegroup *sharegroup);
 
     // attribute
 
@@ -406,7 +433,8 @@ public:
 #endif
 
     // victor@timecode: support multiple directors
-    GLProgramCache* getProgramCache() const;
+    GLProgramCache *getProgramCache() const;
+    DirectorSharegroup *getSharegroup() const { return _sharegroup; }
     // victor@timecode: end
 
     /* Gets delta time since last tick to main loop */
@@ -431,10 +459,6 @@ protected:
     /** calculates delta time since last time it was called */    
     void calculateDeltaTime();
 
-    //textureCache creation or release
-    void initTextureCache();
-    void destroyTextureCache();
-
     /** Scheduler associated with this director
      @since v2.0
      */
@@ -458,8 +482,10 @@ protected:
      which inherit from it as default renderer context,you can have your own by inherit from it*/
     GLView *_openGLView;
 
+    // victor@timecode: move to sharegroup
     //texture cache belongs to this director
-    TextureCache *_textureCache;
+    //TextureCache *_textureCache;
+    // victor@timecode: end
 
     double _animationInterval;
     double _oldAnimationInterval;
@@ -524,8 +550,9 @@ protected:
 
     // GLView will recreate stats labels to fit visible rect
     friend class GLView;
+
     // victor@timecode: support multiple directors
-    mutable GLProgramCache* _programCache;
+    mutable DirectorSharegroup *_sharegroup;
     // victor@timecode: end
 };
 
