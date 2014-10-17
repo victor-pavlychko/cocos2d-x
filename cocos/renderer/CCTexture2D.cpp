@@ -709,7 +709,10 @@ std::string Texture2D::getDescription() const
 // implementation Texture2D (Image)
 bool Texture2D::initWithImage(Image *image)
 {
-    return initWithImage(image, g_defaultAlphaPixelFormat);
+    // victor@timecode: use default image format for compressed images
+    return initWithImage(image, image->isCompressed() ? PixelFormat::AUTO : g_defaultAlphaPixelFormat);
+    //return initWithImage(image, g_defaultAlphaPixelFormat);
+    // victor@timecode: end
 }
 
 bool Texture2D::initWithImage(Image *image, PixelFormat format)
