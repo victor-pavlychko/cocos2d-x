@@ -110,11 +110,16 @@ static id s_sharedDirectorCaller;
                       
 -(void) doCaller: (id) sender
 {
-    cocos2d::Director::enumerateDirectors([](cocos2d::Director *director) {
-        cocos2d::Director::activateDirector(director);
-        [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
-        director->mainLoop();
-        cocos2d::Director::activateDirector(nullptr);
+    bool isDefaultRunLoopMode = [[[NSRunLoop currentRunLoop] currentMode] isEqualToString:NSDefaultRunLoopMode];
+    
+    cocos2d::Director::enumerateDirectors([isDefaultRunLoopMode](cocos2d::Director *director) {
+        if ([(CCEAGLView*)director->getOpenGLView()->getEAGLView() window] && (isDefaultRunLoopMode || director->isPriority))
+        {
+            cocos2d::Director::activateDirector(director);
+            [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
+            director->mainLoop();
+            cocos2d::Director::activateDirector(nullptr);
+        }
     });
 /*
     cocos2d::Director* director = cocos2d::Director::getInstance();

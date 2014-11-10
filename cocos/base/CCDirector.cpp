@@ -180,6 +180,8 @@ bool Director::initWithSharegroup(DirectorSharegroup *sharegroup)
 
     setDefaultValues();
 
+    isPriority = false;
+    
     // scenes
     _runningScene = nullptr;
     _nextScene = nullptr;

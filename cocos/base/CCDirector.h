@@ -434,6 +434,8 @@ public:
     GLProgramCache *getProgramCache() const { return _sharegroup->getProgramCache(); }
     GLProgramStateCache *getProgramStateCache() const;
     DirectorSharegroup *getSharegroup() const { return _sharegroup; }
+    
+    bool isPriority;
     // victor@timecode: end
 
     /* Gets delta time since last tick to main loop */
