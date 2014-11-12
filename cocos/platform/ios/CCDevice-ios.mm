@@ -309,6 +309,8 @@ static bool _initWithString(const char * text, cocos2d::Device::TextAlign align,
             }
         }
         
+        // victor@timecode: do not enforce constraints
+/*
         // adjust text rect
         if (constrainSize.width > 0 && constrainSize.width > dim.width)
         {
@@ -318,7 +320,8 @@ static bool _initWithString(const char * text, cocos2d::Device::TextAlign align,
         {
             dim.height = constrainSize.height;
         }
-        
+*/
+        // victor@timecode: end
         
         // compute the padding needed by shadow and stroke
         float shadowStrokePaddingX = 0.0f;
