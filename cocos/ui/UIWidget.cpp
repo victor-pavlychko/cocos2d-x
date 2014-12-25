@@ -141,28 +141,31 @@ _enabled(true),
 _bright(true),
 _touchEnabled(false),
 _highlight(false),
+_affectByClipping(false),
+_ignoreSize(false),
+_propagateTouchEvents(true),
 _brightStyle(BrightStyle::NONE),
-_touchBeganPosition(Vec2::ZERO),
-_touchMovePosition(Vec2::ZERO),
-_touchEndPosition(Vec2::ZERO),
-_touchEventListener(nullptr),
-_touchEventSelector(nullptr),
+_sizeType(SizeType::ABSOLUTE),
+_positionType(PositionType::ABSOLUTE),
 _actionTag(0),
 _customSize(Size::ZERO),
-_ignoreSize(false),
-_affectByClipping(false),
-_sizeType(SizeType::ABSOLUTE),
 _sizePercent(Vec2::ZERO),
-_positionType(PositionType::ABSOLUTE),
 _positionPercent(Vec2::ZERO),
 _hitted(false),
 _touchListener(nullptr),
+_touchBeganPosition(Vec2::ZERO),
+_touchMovePosition(Vec2::ZERO),
+_touchEndPosition(Vec2::ZERO),
 _flippedX(false),
 _flippedY(false),
+_layoutParameterType(LayoutParameter::Type::NONE),
 _focused(false),
 _focusEnabled(true),
-_layoutParameterType(LayoutParameter::Type::NONE),
-_propagateTouchEvents(true)
+_touchEventListener(nullptr),
+_touchEventSelector(nullptr),
+_ccEventCallback(nullptr),
+_callbackType(""),
+_callbackName("")
 {
   
 }
@@ -219,13 +222,8 @@ bool Widget::init()
 
 void Widget::onEnter()
 {
+    updateSizeAndPosition();
     ProtectedNode::onEnter();
-    if (_positionType == PositionType::PERCENT
-        || _sizeType == SizeType::PERCENT) {
-        if (_parent) {
-            Helper::doLayout(_parent);
-        }
-    }
 }
 
 void Widget::onExit()
@@ -236,7 +234,7 @@ void Widget::onExit()
 
 void Widget::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t parentFlags)
 {
-    if (_visible)
+    if (_visible || !isVisitableByVisitingCamera())
     {
         adaptRenderers();
         ProtectedNode::visit(renderer, parentTransform, parentFlags);
@@ -283,7 +281,30 @@ void Widget::setContentSize(const cocos2d::Size &contentSize)
     {
         _contentSize = getVirtualRendererSize();
     }
-    
+    if (_running)
+    {
+        Widget* widgetParent = getWidgetParent();
+        Size pSize;
+        if (widgetParent)
+        {
+            pSize = widgetParent->getContentSize();
+        }
+        else
+        {
+            pSize = _parent->getContentSize();
+        }
+        float spx = 0.0f;
+        float spy = 0.0f;
+        if (pSize.width > 0.0f)
+        {
+            spx = _customSize.width / pSize.width;
+        }
+        if (pSize.height > 0.0f)
+        {
+            spy = _customSize.height / pSize.height;
+        }
+        _sizePercent = Vec2(spx, spy);
+    }
     onSizeChanged();
 }
 
@@ -294,15 +315,29 @@ void Widget::setSize(const Size &size)
 
 void Widget::setSizePercent(const Vec2 &percent)
 {
-
-    auto component = this->getOrCreateLayoutComponent();
-    component->setUsingPercentContentSize(true);
-    component->setPercentContentSize(percent);
-    
-    if (nullptr != _parent)
+    _sizePercent = percent;
+    Size cSize = _customSize;
+    if (_running)
     {
-        Helper::doLayout(_parent);
+        Widget* widgetParent = getWidgetParent();
+        if (widgetParent)
+        {
+            cSize = Size(widgetParent->getContentSize().width * percent.x , widgetParent->getContentSize().height * percent.y);
+        }
+        else
+        {
+            cSize = Size(_parent->getContentSize().width * percent.x , _parent->getContentSize().height * percent.y);
+        }
     }
+    if (_ignoreSize)
+    {
+        this->setContentSize(getVirtualRendererSize());
+    }
+    else
+    {
+        this->setContentSize(cSize);
+    }
+    _customSize = cSize;
 }
 
 void Widget::updateSizeAndPosition()
@@ -387,17 +422,6 @@ void Widget::updateSizeAndPosition(const cocos2d::Size &parentSize)
 void Widget::setSizeType(SizeType type)
 {
     _sizeType = type;
-    
-    auto component = this->getOrCreateLayoutComponent();
-
-    if (_sizeType == Widget::SizeType::PERCENT)
-    {
-        component->setUsingPercentContentSize(true);
-    }
-    else
-    {
-        component->setUsingPercentContentSize(false);
-    }
 }
 
 Widget::SizeType Widget::getSizeType() const
@@ -445,9 +469,7 @@ const Size& Widget::getCustomSize() const
 
 const Vec2& Widget::getSizePercent()
 {
-    auto component = this->getOrCreateLayoutComponent();
-
-    return component->getPercentContentSize();
+    return _sizePercent;
 }
 
 Vec2 Widget::getWorldPosition()const
@@ -462,7 +484,14 @@ Node* Widget::getVirtualRenderer()
 
 void Widget::onSizeChanged()
 {
-    Helper::doLayout(this);
+    for (auto& child : getChildren())
+    {
+        Widget* widgetChild = dynamic_cast<Widget*>(child);
+        if (widgetChild)
+        {
+            widgetChild->updateSizeAndPosition();
+        }
+    }
 }
 
 Size Widget::getVirtualRendererSize() const
@@ -847,6 +876,11 @@ void Widget::addClickEventListener(const ccWidgetClickCallback &callback)
 {
     this->_clickEventListener = callback;
 }
+    
+void Widget::addCCSEventListener(const ccWidgetEventCallback &callback)
+{
+    this->_ccEventCallback = callback;
+}
 
 bool Widget::hitTest(const Vec2 &pt)
 {
@@ -914,36 +948,47 @@ void Widget::interceptTouchEvent(cocos2d::ui::Widget::TouchEventType event, coco
 
 void Widget::setPosition(const Vec2 &pos)
 {
+    if (_running)
+    {
+        Widget* widgetParent = getWidgetParent();
+        if (widgetParent)
+        {
+            Size pSize = widgetParent->getContentSize();
+            if (pSize.width <= 0.0f || pSize.height <= 0.0f)
+            {
+                _positionPercent = Vec2::ZERO;
+            }
+            else
+            {
+                _positionPercent = Vec2(pos.x / pSize.width, pos.y / pSize.height);
+            }
+        }
+    }
     ProtectedNode::setPosition(pos);
-    _positionType = PositionType::ABSOLUTE;
-    
 }
 
 void Widget::setPositionPercent(const Vec2 &percent)
 {
-    this->setNormalizedPosition(percent);
-    _positionType = PositionType::PERCENT;
+    _positionPercent = percent;
+    if (_running)
+    {
+        Widget* widgetParent = getWidgetParent();
+        if (widgetParent)
+        {
+            Size parentSize = widgetParent->getContentSize();
+            Vec2 absPos = Vec2(parentSize.width * _positionPercent.x, parentSize.height * _positionPercent.y);
+            setPosition(absPos);
+        }
+    }
 }
 
 const Vec2& Widget::getPositionPercent()const{
-    return this->getNormalizedPosition();
+    return _positionPercent;
 }
 
 void Widget::setPositionType(PositionType type)
 {
     _positionType = type;
-    if (type == Widget::PositionType::ABSOLUTE)
-    {
-        Vec2 oldPosition = this->getPosition();
-        this->setPosition(this->getPosition() + Vec2(10,0));
-        this->setPosition(oldPosition);
-    }
-    else
-    {
-        Vec2 oldNormalizedPosition = this->getNormalizedPosition();
-        this->setNormalizedPosition(oldNormalizedPosition + Vec2(0.2,0.1));
-        this->setNormalizedPosition(oldNormalizedPosition);
-    }
 }
 
 Widget::PositionType Widget::getPositionType() const
@@ -1098,17 +1143,77 @@ void Widget::copyProperties(Widget *widget)
     }
 }
     
-void Widget::setFlippedX(bool flippedX)
-{
-    _flippedX = flippedX;
-    updateFlippedX();
-}
-
-void Widget::setFlippedY(bool flippedY)
-{
-    _flippedY = flippedY;
-    updateFlippedY();
-}
+    void Widget::setFlippedX(bool flippedX)
+    {
+        
+        float realScale = this->getScaleX();
+        _flippedX = flippedX;
+        this->setScaleX(realScale);
+    }
+    
+    void Widget::setFlippedY(bool flippedY)
+    {
+        float realScale = this->getScaleY();
+        _flippedY = flippedY;
+        this->setScaleY(realScale);
+    }
+    
+   
+    
+    void Widget::setScaleX(float scaleX)
+    {
+        if (_flippedX) {
+            scaleX = scaleX * -1;
+        }
+        Node::setScaleX(scaleX);
+    }
+    
+    void Widget::setScaleY(float scaleY)
+    {
+        if (_flippedY) {
+            scaleY = scaleY * -1;
+        }
+        Node::setScaleY(scaleY);
+    }
+    
+    void Widget::setScale(float scale)
+    {
+        this->setScaleX(scale);
+        this->setScaleY(scale);
+        this->setScaleZ(scale);
+    }
+    
+    void Widget::setScale(float scaleX, float scaleY)
+    {
+        this->setScaleX(scaleX);
+        this->setScaleY(scaleY);
+    }
+    
+    float Widget::getScaleX()const
+    {
+        float originalScale = Node::getScaleX();
+        if (_flippedX)
+        {
+            originalScale = originalScale * -1.0;
+        }
+        return originalScale;
+    }
+    
+    float Widget::getScaleY()const
+    {
+        float originalScale = Node::getScaleY();
+        if (_flippedY)
+        {
+            originalScale = originalScale * -1.0;
+        }
+        return originalScale;
+    }
+    
+    float Widget::getScale()const
+    {
+        CCASSERT(this->getScaleX() == this->getScaleY(), "");
+        return this->getScaleX();
+    }
 
 
 /*temp action*/

@@ -1,6 +1,8 @@
 
 
 #include "GUIEditorTest.h"
+
+#include "cocostudio/ActionTimeline/CSLoader.h"
 #include "CocoStudioGUITest.h"
 #include "UISceneManager_Editor.h"
 
@@ -118,8 +120,9 @@ g_guisTests[] =
         }
 	},
      */
+    /*
     {
-        "gui TextAtals Editor Test",
+        "gui TextAtlas Editor Test",
         [](Ref* sender)
         {
             UISceneManager_Editor* pManager = UISceneManager_Editor::sharedUISceneManager_Editor();
@@ -130,6 +133,7 @@ g_guisTests[] =
             Director::getInstance()->replaceScene(pScene);
         }
 	},
+     */
     {
         "gui Text Editor Test",
         [](Ref* sender)
@@ -203,7 +207,6 @@ g_guisTests[] =
             Director::getInstance()->replaceScene(pScene);
         }
 	},
-    /*
     {
         "gui ListView Editor Test",
         [](Ref* sender)
@@ -216,7 +219,6 @@ g_guisTests[] =
             Director::getInstance()->replaceScene(pScene);
         }
 	},
-     */
     /*
     {
         "gui GridViewTest",
@@ -268,7 +270,7 @@ static Vec2 s_tCurPos = Vec2::ZERO;
 ////////////////////////////////////////////////////////
 void GUIEditorMainLayer::onEnter()
 {
-    Layer::onEnter();
+    Layer::onEnter();    
     
     auto s = Director::getInstance()->getWinSize();
     

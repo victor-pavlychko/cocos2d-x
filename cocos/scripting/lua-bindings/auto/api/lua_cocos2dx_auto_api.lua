@@ -77,11 +77,6 @@
 
 
 --------------------------------------------------------
--- the cc Camera
--- @field [parent=#cc] Camera#Camera Camera preloaded module
-
-
---------------------------------------------------------
 -- the cc EventListener
 -- @field [parent=#cc] EventListener#EventListener EventListener preloaded module
 
@@ -1137,6 +1132,36 @@
 
 
 --------------------------------------------------------
+-- the cc Camera
+-- @field [parent=#cc] Camera#Camera Camera preloaded module
+
+
+--------------------------------------------------------
+-- the cc BaseLight
+-- @field [parent=#cc] BaseLight#BaseLight BaseLight preloaded module
+
+
+--------------------------------------------------------
+-- the cc DirectionLight
+-- @field [parent=#cc] DirectionLight#DirectionLight DirectionLight preloaded module
+
+
+--------------------------------------------------------
+-- the cc PointLight
+-- @field [parent=#cc] PointLight#PointLight PointLight preloaded module
+
+
+--------------------------------------------------------
+-- the cc SpotLight
+-- @field [parent=#cc] SpotLight#SpotLight SpotLight preloaded module
+
+
+--------------------------------------------------------
+-- the cc AmbientLight
+-- @field [parent=#cc] AmbientLight#AmbientLight AmbientLight preloaded module
+
+
+--------------------------------------------------------
 -- the cc GLProgram
 -- @field [parent=#cc] GLProgram#GLProgram GLProgram preloaded module
 
@@ -1219,11 +1244,6 @@
 --------------------------------------------------------
 -- the cc Component
 -- @field [parent=#cc] Component#Component Component preloaded module
-
-
---------------------------------------------------------
--- the cc CSLoader
--- @field [parent=#cc] CSLoader#CSLoader CSLoader preloaded module
 
 
 return nil

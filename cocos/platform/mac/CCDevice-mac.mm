@@ -131,8 +131,8 @@ static bool _initWithString(const char * text, Device::TextAlign align, const ch
 					if ([@"!?.,-= " rangeOfString:character].location != NSNotFound) {
                         lastBreakLocation = i + insertCount;
                     }
-                    //textSize = [lineBreak sizeWithAttributes:tokenAttributesDict];
-                    if(textSize.height > info->height)
+                    textSize = [lineBreak sizeWithAttributes:tokenAttributesDict];
+                    if(info->height > 0 && textSize.height > info->height)
                         break;
 					if (textSize.width > info->width) {
                         if(lastBreakLocation > 0) {

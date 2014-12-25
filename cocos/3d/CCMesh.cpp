@@ -36,14 +36,14 @@ using namespace std;
 NS_CC_BEGIN
 
 Mesh::Mesh()
-: _visible(true)
-, _texture(nullptr)
+: _texture(nullptr)
 , _skin(nullptr)
+, _visible(true)
+, _isTransparent(false)
 , _meshIndexData(nullptr)
-, _visibleChanged(nullptr)
 , _glProgramState(nullptr)
 , _blend(BlendFunc::ALPHA_NON_PREMULTIPLIED)
-, _isTransparent(false)
+, _visibleChanged(nullptr)
 {
     
 }
@@ -230,10 +230,31 @@ void Mesh::calcuateAABB()
         _aabb = _meshIndexData->getAABB();
         if (_skin)
         {
-            Bone3D* root = _skin->getRootBone();
+            //get skin root
+            Bone3D* root = nullptr;
+            Mat4 invBindPose;
+            if (_skin->_skinBones.size())
+            {
+                root = _skin->_skinBones.at(0);
+                while (root) {
+                    auto parent = root->getParentBone();
+                    bool parentInSkinBone = false;
+                    for (const auto& bone : _skin->_skinBones) {
+                        if (bone == parent)
+                        {
+                            parentInSkinBone = true;
+                            break;
+                        }
+                    }
+                    if (!parentInSkinBone)
+                        break;
+                    root = parent;
+                }
+            }
+            
             if (root)
             {
-                _aabb.transform(root->getWorldMat());
+                _aabb.transform(root->getWorldMat() * _skin->getInvBindPose(root));
             }
         }
     }

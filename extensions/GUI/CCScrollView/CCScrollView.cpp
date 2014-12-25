@@ -62,8 +62,8 @@ ScrollView::ScrollView()
 , _touchLength(0.0f)
 , _minScale(0.0f)
 , _maxScale(0.0f)
-, _touchListener(nullptr)
 , _scissorRestored(false)
+, _touchListener(nullptr)
 {
 
 }
@@ -579,7 +579,7 @@ void ScrollView::onAfterDraw()
 void ScrollView::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t parentFlags)
 {
     // quick return if not visible
-    if (!isVisible())
+    if (!isVisible() || !isVisitableByVisitingCamera())
     {
         return;
     }

@@ -979,12 +979,16 @@ std::string ClippingToRenderTextureTest::subtitle() const
 void ClippingToRenderTextureTest::setup()
 {
     auto button = MenuItemFont::create("Reproduce bug", [&](Ref *sender) {
+        std::vector<Node*> nodes;
         enumerateChildren("remove me [0-9]", [&](Node *node) {
-            this->removeChild(node);
-            this->reproduceBug();
+            nodes.push_back(node);
             return false;
+        });
+        for (auto node : nodes)
+        {
+            this->removeChild(node);
         }
-                          );
+        this->reproduceBug();
     });
 
     auto s = Director::getInstance()->getWinSize();
@@ -1088,12 +1092,13 @@ void ClippingToRenderTextureTest::reproduceBug()
     img->drawPolygon(triangle, 3, red, 0, red);
     clipper->addChild(img);
 
-    // container rendered on Texture the size of the screen
-    RenderTexture* rt = RenderTexture::create(visibleSize.width, visibleSize.height);
+    // container rendered on Texture the size of the screen and because Clipping node use stencil buffer so we need to
+    // create RenderTexture with depthStencil format parameter
+    RenderTexture* rt = RenderTexture::create(visibleSize.width, visibleSize.height, Texture2D::PixelFormat::RGBA8888, GL_DEPTH24_STENCIL8);
     rt->setPosition(visibleSize.width/2, visibleSize.height/2);
     this->addChild(rt);
 
-    rt->beginWithClear(0.3f, 0, 0, 1);
+    rt->begin();
     container->visit();
     rt->end();
 }

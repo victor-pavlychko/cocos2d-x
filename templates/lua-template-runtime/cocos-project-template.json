@@ -82,6 +82,13 @@
                 ]
             },
             {
+                "from": "external/sqlite3/libraries/win32",
+                "to": "runtime/win32",
+                "include": [
+                    "*.dll"
+                ]
+            },
+            {
                 "from": "external/tiff/prebuilt/win32",
                 "to": "runtime/win32",
                 "include": [
@@ -97,6 +104,7 @@
             "exclude": [
                 "proj.android/bin",
                 "proj.android/assets",
+                "proj.android/libs",
                 "proj.ios_mac/HelloLua.xcodeproj/project.xcworkspace",
                 "proj.ios_mac/HelloLua.xcodeproj/xcuserdata",
                 "proj.win32/Debug.win32",

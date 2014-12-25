@@ -46,7 +46,15 @@ void PlayOverEvent(SLPlayItf caller, void* context, SLuint32 playEvent)
     if (context && playEvent == SL_PLAYEVENT_HEADATEND)
     {
         AudioPlayer* player = (AudioPlayer*)context;
-        player->_playOver = true;
+        //fix issue#8965:AudioEngine can't looping audio on Android 2.3.x
+        if (player->_loop)
+        {
+            (*(player->_fdPlayerPlay))->SetPlayState(player->_fdPlayerPlay, SL_PLAYSTATE_PLAYING);
+        }
+        else
+        {
+            player->_playOver = true;
+        }
     }
 }
 
@@ -55,6 +63,7 @@ AudioPlayer::AudioPlayer()
     , _finishCallback(nullptr)
     , _duration(0.0f)
     , _playOver(false)
+    , _loop(false)
 {
 
 }
@@ -143,6 +152,7 @@ bool AudioPlayer::init(SLEngineItf engineEngine, SLObjectItf outputMixObject,con
         result = (*_fdPlayerObject)->GetInterface(_fdPlayerObject, SL_IID_VOLUME, &_fdPlayerVolume);
         if(SL_RESULT_SUCCESS != result){ ERRORLOG("get the volume interface fail"); break; }
 
+        _loop = loop;
         if (loop){
             (*_fdPlayerSeek)->SetLoop(_fdPlayerSeek, SL_BOOLEAN_TRUE, 0, SL_TIME_UNKNOWN);
         }
@@ -217,7 +227,7 @@ bool AudioEngineImpl::init()
     return ret;
 }
 
-int AudioEngineImpl::play2d(const std::string &fileFullPath ,bool loop ,float volume)
+int AudioEngineImpl::play2d(const std::string &filePath ,bool loop ,float volume)
 {
     auto audioId = AudioEngine::INVAILD_AUDIO_ID;
 
@@ -227,10 +237,10 @@ int AudioEngineImpl::play2d(const std::string &fileFullPath ,bool loop ,float vo
             break;
 
         auto& player = _audioPlayers[currentAudioID];
-        auto initPlayer = player.init( _engineEngine, _outputMixObject, fileFullPath, volume, loop);
+        auto initPlayer = player.init( _engineEngine, _outputMixObject, FileUtils::getInstance()->fullPathForFilename(filePath), volume, loop);
         if (!initPlayer){
             _audioPlayers.erase(currentAudioID);
-            log("%s,%d message:create player for %s fail", __func__, __LINE__, fileFullPath.c_str());
+            log("%s,%d message:create player for %s fail", __func__, __LINE__, filePath.c_str());
             break;
         }
 
@@ -286,13 +296,14 @@ void AudioEngineImpl::setVolume(int audioID,float volume)
     }
     auto result = (*player._fdPlayerVolume)->SetVolumeLevel(player._fdPlayerVolume, dbVolume);
     if(SL_RESULT_SUCCESS != result){
-        log("%s error:%lu",__func__, result);
+        log("%s error:%u",__func__, result);
     }
 }
 
 void AudioEngineImpl::setLoop(int audioID, bool loop)
 {
     auto& player = _audioPlayers[audioID];
+    player._loop = loop;
     SLboolean loopEnabled = SL_BOOLEAN_TRUE;
     if (!loop){
         loopEnabled = SL_BOOLEAN_FALSE;
@@ -305,7 +316,7 @@ void AudioEngineImpl::pause(int audioID)
     auto& player = _audioPlayers[audioID];
     auto result = (*player._fdPlayerPlay)->SetPlayState(player._fdPlayerPlay, SL_PLAYSTATE_PAUSED);
     if(SL_RESULT_SUCCESS != result){
-        log("%s error:%lu",__func__, result);
+        log("%s error:%u",__func__, result);
     }
 }
 
@@ -314,7 +325,7 @@ void AudioEngineImpl::resume(int audioID)
     auto& player = _audioPlayers[audioID];
     auto result = (*player._fdPlayerPlay)->SetPlayState(player._fdPlayerPlay, SL_PLAYSTATE_PLAYING);
     if(SL_RESULT_SUCCESS != result){
-        log("%s error:%lu",__func__, result);
+        log("%s error:%u",__func__, result);
     }
 }
 
@@ -323,7 +334,7 @@ void AudioEngineImpl::stop(int audioID)
     auto& player = _audioPlayers[audioID];
     auto result = (*player._fdPlayerPlay)->SetPlayState(player._fdPlayerPlay, SL_PLAYSTATE_STOPPED);
     if(SL_RESULT_SUCCESS != result){
-        log("%s error:%lu",__func__, result);
+        log("%s error:%u",__func__, result);
     }
 
     _audioPlayers.erase(audioID);
