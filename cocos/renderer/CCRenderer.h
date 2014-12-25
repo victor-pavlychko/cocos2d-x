@@ -141,6 +141,10 @@ public:
     /** returns whether or not a rectangle is visible or not */
     bool checkVisibility(const Mat4& transform, const Size& size);
 
+    // victor@timecode: deferred calls
+    void addAfterRender(std::function<void()> afterRender) { _afterRender.push_back(afterRender); }
+    // victor@timecode: end
+    
 protected:
 
     //Setup VBO or VAO based on OpenGL extensions
@@ -202,6 +206,10 @@ protected:
     bool _isRendering;
     
     GroupCommandManager* _groupCommandManager;
+    
+    // victor@timecode: deferred calls
+    std::vector<std::function<void()>> _afterRender;
+    // victor@timecode: end
     
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _cacheTextureListener;

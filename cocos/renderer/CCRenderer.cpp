@@ -537,6 +537,13 @@ void Renderer::render()
     }
     clean();
     _isRendering = false;
+    
+    for (auto &f: _afterRender)
+    {
+        f();
+    }
+    
+    _afterRender.clear();
 }
 
 void Renderer::clean()
