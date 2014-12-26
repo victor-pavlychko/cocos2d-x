@@ -117,7 +117,7 @@ public:
     * Supported image extensions: .png, .jpg
     * @since v0.8
     */
-    virtual void addImageAsync(const std::string &filepath, const std::function<void(Texture2D*)>& callback);
+    virtual void addImageAsync(const std::string &filepath, const std::function<void(Texture2D*)>& callback, bool cache);
     
     /* Unbind a specified bound image asynchronous callback
      * In the case an object who was bound to an image asynchronous callback was destroyed before the callback is invoked,
@@ -197,10 +197,11 @@ public:
     struct AsyncStruct
     {
     public:
-        AsyncStruct(const std::string& fn, std::function<void(Texture2D*)> f) : filename(fn), callback(f) {}
+        AsyncStruct(const std::string& fn, std::function<void(Texture2D*)> f, bool c) : filename(fn), callback(f), cache(c) {}
 
         std::string filename;
         std::function<void(Texture2D*)> callback;
+        bool cache;
     };
 
 protected:

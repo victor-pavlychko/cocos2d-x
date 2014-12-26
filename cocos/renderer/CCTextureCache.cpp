@@ -95,7 +95,7 @@ std::string TextureCache::getDescription() const
     return StringUtils::format("<TextureCache | Number of textures = %d>", static_cast<int>(_textures.size()));
 }
 
-void TextureCache::addImageAsync(const std::string &path, const std::function<void(Texture2D*)>& callback)
+void TextureCache::addImageAsync(const std::string &path, const std::function<void(Texture2D*)>& callback, bool cache)
 {
     Texture2D *texture = nullptr;
 
@@ -131,7 +131,7 @@ void TextureCache::addImageAsync(const std::string &path, const std::function<vo
     ++_asyncRefCount;
 
     // generate async struct
-    AsyncStruct *data = new (std::nothrow) AsyncStruct(fullpath, callback);
+    AsyncStruct *data = new (std::nothrow) AsyncStruct(fullpath, callback, cache);
 
     // add async struct into queue
     _asyncStructQueueMutex.lock();
@@ -194,24 +194,27 @@ void TextureCache::loadImage()
         }        
 
         Image *image = nullptr;
-        bool generateImage = false;
+        bool generateImage = !asyncStruct->cache;
 
-        auto it = _textures.find(asyncStruct->filename);
-        if( it == _textures.end() )
+        if (asyncStruct->cache)
         {
-           _imageInfoMutex.lock();
-           ImageInfo *imageInfo;
-           size_t pos = 0;
-           size_t infoSize = _imageInfoQueue->size();
-           for (; pos < infoSize; pos++)
-           {
-               imageInfo = (*_imageInfoQueue)[pos];
-               if(imageInfo->asyncStruct->filename.compare(asyncStruct->filename) == 0)
-                   break;
-           }
-           _imageInfoMutex.unlock();
-           if(infoSize == 0 || pos == infoSize)
-               generateImage = true;
+            auto it = _textures.find(asyncStruct->filename);
+            if( it == _textures.end() )
+            {
+               _imageInfoMutex.lock();
+               ImageInfo *imageInfo;
+               size_t pos = 0;
+               size_t infoSize = _imageInfoQueue->size();
+               for (; pos < infoSize; pos++)
+               {
+                   imageInfo = (*_imageInfoQueue)[pos];
+                   if(imageInfo->asyncStruct->filename.compare(asyncStruct->filename) == 0)
+                       break;
+               }
+               _imageInfoMutex.unlock();
+               if(infoSize == 0 || pos == infoSize)
+                   generateImage = true;
+            }
         }
 
         if (generateImage)
@@ -276,12 +279,16 @@ void TextureCache::addImageAsyncCallBack(float dt)
 
             texture->initWithImage(image);
 
+            if (asyncStruct->cache)
+            {
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-            // cache the texture file name
-            VolatileTextureMgr::addImageTexture(texture, filename);
+                // cache the texture file name
+                VolatileTextureMgr::addImageTexture(texture, filename);
 #endif
-            // cache the texture. retain it, since it is added in the map
-            _textures.insert( std::make_pair(filename, texture) );
+                // cache the texture. retain it, since it is added in the map
+                _textures.insert( std::make_pair(filename, texture) );
+            }
+
             texture->retain();
 
             texture->autorelease();
