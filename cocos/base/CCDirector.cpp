@@ -98,9 +98,10 @@ Director* Director::getInstance()
     }
 */
 
-    CCASSERT(s_SharedDirector, "FATAL: No active director!");
+    //CCASSERT(s_SharedDirector, "FATAL: No active director!");
     // victor@timecode: end
 
+    assert(s_SharedDirector);
     return s_SharedDirector;
 }
 
@@ -118,7 +119,7 @@ Director* Director::newInstance()
 Director* Director::newInstanceWithSharegroup(DirectorSharegroup *sharegroup)
 {
     Director *director = new (std::nothrow) DisplayLinkDirector();
-    CCASSERT(director, "FATAL: Not enough memory");
+    assert(director);
     activateDirector(director);
     director->initWithSharegroup(sharegroup);
     registerDirector(director);
@@ -279,9 +280,9 @@ Director::~Director(void)
     // delete _lastUpdate
     CC_SAFE_DELETE(_lastUpdate);
 
-    Configuration::destroyInstance();
+    //Configuration::destroyInstance();
 
-    s_SharedDirector = nullptr;
+    //s_SharedDirector = nullptr;
 }
 
 // victor@timecode: support multiple directors
