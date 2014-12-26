@@ -64,6 +64,8 @@ class Camera;
 
 class Console;
 
+class PoolManager;
+
 /**
 @brief Class that creates and handles the main Window and manages how
 and when to execute the Scenes.
@@ -146,6 +148,7 @@ public:
     static Director* getInstance();
     
     // victor@timecode: add support for multiple directors
+    static Director* getInstanceUnsafe();
     static Director* newInstance();
     static Director* newInstanceWithSharegroup(DirectorSharegroup *sharegroup);
     static void registerDirector(Director *director);
@@ -421,6 +424,8 @@ public:
     DirectorSharegroup *getSharegroup() const { return _sharegroup; }
     
     bool isPriority;
+    
+    PoolManager *poolManager;
     // victor@timecode: end
 
     /* Gets delta time since last tick to main loop */

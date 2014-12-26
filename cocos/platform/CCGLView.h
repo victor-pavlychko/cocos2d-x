@@ -251,6 +251,8 @@ public:
     virtual id getCocoaWindow() = 0;
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) */
     
+    virtual void activateContext() { }
+    
 protected:
     void updateDesignResolutionSize();
     

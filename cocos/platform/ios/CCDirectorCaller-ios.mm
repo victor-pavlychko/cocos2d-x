@@ -31,6 +31,7 @@
 #import <Foundation/Foundation.h>
 #import <OpenGLES/EAGL.h>
 #import "base/CCDirector.h"
+#import "base/CCAutoreleasePool.h"
 #import "CCEAGLView-ios.h"
 
 static id s_sharedDirectorCaller;
@@ -116,11 +117,13 @@ static id s_sharedDirectorCaller;
         if ([(CCEAGLView*)director->getOpenGLView()->getEAGLView() window] && (isDefaultRunLoopMode || director->isPriority))
         {
             cocos2d::Director::activateDirector(director);
-            [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
             director->mainLoop();
             cocos2d::Director::activateDirector(nullptr);
         }
     });
+
+    cocos2d::PoolManager::getInstance()->getCurrentPool()->clear();
+
 /*
     cocos2d::Director* director = cocos2d::Director::getInstance();
     [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];

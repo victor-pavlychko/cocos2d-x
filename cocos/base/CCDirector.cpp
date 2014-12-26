@@ -105,6 +105,11 @@ Director* Director::getInstance()
 }
 
 // victor@timecode: add support for multiple directors
+Director* Director::getInstanceUnsafe()
+{
+    return s_SharedDirector;
+}
+
 Director* Director::newInstance()
 {
     return newInstanceWithSharegroup(nullptr);
@@ -133,6 +138,11 @@ void Director::unregisterDirector(Director *director)
 void Director::activateDirector(Director *director)
 {
     s_SharedDirector = (DisplayLinkDirector *)director;
+    
+    if (s_SharedDirector && s_SharedDirector->getOpenGLView())
+    {
+        s_SharedDirector->getOpenGLView()->activateContext();
+    }
 }
 
 void Director::enumerateDirectors(std::function<void(Director*)> enumerator)
@@ -161,7 +171,7 @@ void DirectorSharegroup::prepareSharegroup()
     //initProgramCache();
 }
 
-Director::Director()
+Director::Director(): _openGLView(nullptr), poolManager(nullptr)
 {
 }
 
@@ -386,7 +396,7 @@ void Director::drawScene()
         _eventDispatcher->dispatchEvent(_eventAfterUpdate);
     }
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     /* to avoid flickr, nextScene MUST be here: after tick and before draw.
      * FIXME: Which bug is this one. It seems that it can't be reproduced with v0.9

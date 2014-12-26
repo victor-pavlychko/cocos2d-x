@@ -255,7 +255,6 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 {
     // victor@timecode: support multiple directors
     cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
-    [EAGLContext setCurrentContext:self.context];
     // victor@timecode: end
 
     [renderer_ resizeFromLayer:(CAEAGLLayer*)self.layer];
@@ -282,7 +281,6 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 -(void) updateScene
 {
     cocos2d::Director::activateDirector((cocos2d::Director *)self.director);
-    [EAGLContext setCurrentContext:self.context];
     cocos2d::Director::getInstance()->drawScene();
     cocos2d::Director::activateDirector(nullptr);
 }

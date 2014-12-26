@@ -24,6 +24,7 @@ THE SOFTWARE.
 ****************************************************************************/
 #include "base/CCAutoreleasePool.h"
 #include "base/ccMacros.h"
+#include "base/CCDirector.h"
 
 NS_CC_BEGIN
 
@@ -107,6 +108,19 @@ PoolManager* PoolManager::s_singleInstance = nullptr;
 
 PoolManager* PoolManager::getInstance()
 {
+    auto activeDirector = Director::getInstanceUnsafe();
+    
+    if (activeDirector)
+    {
+        if (activeDirector->poolManager == nullptr)
+        {
+            activeDirector->poolManager = new (std::nothrow) PoolManager();
+            // Add the first auto release pool
+            new AutoreleasePool("cocos2d autorelease pool");
+        }
+        return activeDirector->poolManager;
+    }
+    
     if (s_singleInstance == nullptr)
     {
         s_singleInstance = new (std::nothrow) PoolManager();
@@ -118,6 +132,14 @@ PoolManager* PoolManager::getInstance()
 
 void PoolManager::destroyInstance()
 {
+    auto activeDirector = Director::getInstanceUnsafe();
+    
+    if (activeDirector)
+    {
+        delete activeDirector->poolManager;
+        activeDirector->poolManager = nullptr;
+    }
+    
     delete s_singleInstance;
     s_singleInstance = nullptr;
 }

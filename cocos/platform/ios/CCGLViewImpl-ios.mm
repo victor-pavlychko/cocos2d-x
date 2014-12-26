@@ -212,6 +212,14 @@ void GLViewImpl::setIMEKeyboardState(bool open)
     }
 }
 
+void GLViewImpl::activateContext()
+{
+    CCEAGLView *eaglview = (CCEAGLView*) _eaglview;
+    
+    [EAGLContext setCurrentContext:eaglview.context];
+}
+
+
 NS_CC_END
 
 #endif // CC_PLATFOR_IOS
