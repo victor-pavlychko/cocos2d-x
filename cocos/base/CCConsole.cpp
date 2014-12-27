@@ -228,7 +228,13 @@ static void _log(const char *format, va_list args)
     fflush(stdout);
 #endif
 
-    Director::getInstance()->getConsole()->log(buf);
+    // victor@timecode: support multiple directors
+    auto director = Director::getInstanceUnsafe();
+    if (director)
+    {
+        director->getConsole()->log(buf);
+    }
+    // victor@timecode: end
 
 }
 
