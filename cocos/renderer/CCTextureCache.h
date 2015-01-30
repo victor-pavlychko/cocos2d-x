@@ -117,7 +117,9 @@ public:
     * Supported image extensions: .png, .jpg
     * @since v0.8
     */
-    virtual void addImageAsync(const std::string &filepath, const std::function<void(Texture2D*)>& callback, bool cache);
+    virtual int addImageAsync(const std::string &filepath, const std::function<void(Texture2D*)>& callback, bool cache);
+
+    virtual void cancelAddImageAsync(int requestId);
     
     /* Unbind a specified bound image asynchronous callback
      * In the case an object who was bound to an image asynchronous callback was destroyed before the callback is invoked,
@@ -197,11 +199,13 @@ public:
     struct AsyncStruct
     {
     public:
-        AsyncStruct(const std::string& fn, std::function<void(Texture2D*)> f, bool c) : filename(fn), callback(f), cache(c) {}
+        AsyncStruct(const std::string& fn, std::function<void(Texture2D*)> f, bool c, int r) : filename(fn), callback(f), cache(c), requestId(r), cancel(false) {}
 
         std::string filename;
         std::function<void(Texture2D*)> callback;
         bool cache;
+        int requestId;
+        bool cancel;
     };
 
 protected:
@@ -213,8 +217,8 @@ protected:
     
     std::thread* _loadingThread;
 
-    std::queue<AsyncStruct*>* _asyncStructQueue;
-    std::deque<ImageInfo*>* _imageInfoQueue;
+    std::list<AsyncStruct*>* _asyncStructQueue;
+    std::vector<ImageInfo*>* _imageInfoQueue;
 
     std::mutex _asyncStructQueueMutex;
     std::mutex _imageInfoMutex;
