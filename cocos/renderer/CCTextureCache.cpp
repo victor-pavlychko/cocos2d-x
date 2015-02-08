@@ -115,6 +115,8 @@ int TextureCache::addImageAsync(const std::string &path, const std::function<voi
     }
 
     // lazy init
+    _asyncStructQueueMutex.lock();
+    _imageInfoMutex.lock();
     if (_asyncStructQueue == nullptr)
     {             
         _asyncStructQueue = new list<AsyncStruct*>();
@@ -125,6 +127,8 @@ int TextureCache::addImageAsync(const std::string &path, const std::function<voi
 
         _needQuit = false;
     }
+    _imageInfoMutex.unlock();
+    _asyncStructQueueMutex.unlock();
 
     if (0 == _asyncRefCount)
     {
@@ -154,25 +158,31 @@ void TextureCache::cancelAddImageAsync(int requestId)
     }
 
     _asyncStructQueueMutex.lock();
-    for (auto &item: *_asyncStructQueue)
+    if (_asyncStructQueue)
     {
-        if (item->requestId == requestId)
+        for (auto &item: *_asyncStructQueue)
         {
-            item->cancel = true;
-            break;
+            if (item->requestId == requestId)
+            {
+                item->cancel = true;
+                break;
+            }
         }
     }
     _asyncStructQueueMutex.unlock();
 
     _imageInfoMutex.lock();
-    for (auto i = _imageInfoQueue->begin(); i != _imageInfoQueue->end(); ++i)
+    if (_imageInfoQueue)
     {
-        if ((*i)->asyncStruct->requestId == requestId)
+        for (auto i = _imageInfoQueue->begin(); i != _imageInfoQueue->end(); ++i)
         {
-            (*i)->image->release();
-            delete (*i)->asyncStruct;
-            _imageInfoQueue->erase(i);
-            break;
+            if ((*i)->asyncStruct->requestId == requestId)
+            {
+                (*i)->image->release();
+                delete (*i)->asyncStruct;
+                _imageInfoQueue->erase(i);
+                break;
+            }
         }
     }
     _imageInfoMutex.unlock();
@@ -284,21 +294,27 @@ void TextureCache::loadImage()
         _imageInfoMutex.unlock();
     }
     
-	if(_asyncStructQueue != nullptr)
+    _asyncStructQueueMutex.lock();
+    if(_asyncStructQueue != nullptr)
     {
         delete _asyncStructQueue;
-	    _asyncStructQueue = nullptr;
-        delete _imageInfoQueue;
-	    _imageInfoQueue = nullptr;
+        _asyncStructQueue = nullptr;
     }
+    _asyncStructQueueMutex.unlock();
+    
+    _imageInfoMutex.lock();
+    if(_imageInfoQueue != nullptr)
+    {
+        delete _imageInfoQueue;
+        _imageInfoQueue = nullptr;
+    }
+    _imageInfoMutex.unlock();
 }
 
 void TextureCache::addImageAsyncCallBack(float dt)
 {
-    // the image is generated in loading thread
-    std::vector<ImageInfo*> *imagesQueue = _imageInfoQueue;
-
     _imageInfoMutex.lock();
+    std::vector<ImageInfo*> *imagesQueue = _imageInfoQueue;
     if (imagesQueue->empty())
     {
         _imageInfoMutex.unlock();
