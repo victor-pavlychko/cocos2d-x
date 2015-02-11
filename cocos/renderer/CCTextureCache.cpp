@@ -130,12 +130,14 @@ int TextureCache::addImageAsync(const std::string &path, const std::function<voi
     _imageInfoMutex.unlock();
     _asyncStructQueueMutex.unlock();
 
+    _imageInfoMutex.lock();
     if (0 == _asyncRefCount)
     {
+        Director::getInstance()->getScheduler()->unschedule(CC_SCHEDULE_SELECTOR(TextureCache::addImageAsyncCallBack), this);
         Director::getInstance()->getScheduler()->schedule(CC_SCHEDULE_SELECTOR(TextureCache::addImageAsyncCallBack), this, 0, false);
     }
-
     ++_asyncRefCount;
+    _imageInfoMutex.unlock();
 
     // generate async struct
     AsyncStruct *data = new (std::nothrow) AsyncStruct(fullpath, callback, cache, requestId);
@@ -178,6 +180,7 @@ void TextureCache::cancelAddImageAsync(int requestId)
         {
             if ((*i)->asyncStruct->requestId == requestId)
             {
+                --_asyncRefCount;
                 (*i)->image->release();
                 delete (*i)->asyncStruct;
                 _imageInfoQueue->erase(i);
@@ -241,6 +244,10 @@ void TextureCache::loadImage()
             
             if (asyncStruct->cancel)
             {
+                _imageInfoMutex.lock();
+                --_asyncRefCount;
+                _imageInfoMutex.unlock();
+
                 delete asyncStruct;
                 continue;
             }
@@ -371,11 +378,14 @@ void TextureCache::addImageAsyncCallBack(float dt)
         delete asyncStruct;
         delete imageInfo;
 
+        _imageInfoMutex.lock();
         --_asyncRefCount;
         if (0 == _asyncRefCount)
         {
-            Director::getInstance()->getScheduler()->unschedule(CC_SCHEDULE_SELECTOR(TextureCache::addImageAsyncCallBack), this);
+            // victor@timecode: TODO: check why _asyncRefCount breaks sometimes...
+            //Director::getInstance()->getScheduler()->unschedule(CC_SCHEDULE_SELECTOR(TextureCache::addImageAsyncCallBack), this);
         }
+        _imageInfoMutex.unlock();
     }
 }
 
