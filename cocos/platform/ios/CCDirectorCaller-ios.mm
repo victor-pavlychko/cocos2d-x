@@ -112,25 +112,34 @@ static id s_sharedDirectorCaller;
 -(void) doCaller: (id) sender
 {
     bool isDefaultRunLoopMode = [[[NSRunLoop currentRunLoop] currentMode] isEqualToString:NSDefaultRunLoopMode];
+    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
     
-    cocos2d::Director::enumerateDirectors([isDefaultRunLoopMode](cocos2d::Director *director) {
-        if ([(CCEAGLView*)director->getOpenGLView()->getEAGLView() window] && (isDefaultRunLoopMode || director->isPriority))
+    cocos2d::Director::enumerateDirectors([isDefaultRunLoopMode, keyWindow](cocos2d::Director *director)
+    {
+        CCEAGLView *eaglView = (CCEAGLView *)director->getOpenGLView()->getEAGLView();
+        if ([eaglView window]  /*&& (isDefaultRunLoopMode || director->isPriority)*/)
         {
+            if (CGRectIsEmpty(CGRectIntersection(keyWindow.bounds, [keyWindow convertRect:eaglView.bounds fromView:eaglView])))
+            {
+                return;
+            }
+            
+            for (UIView *view = eaglView; view; view = view.superview)
+            {
+                if (view.hidden)
+                {
+                    return;
+                }
+            }
+            
             cocos2d::Director::activateDirector(director);
             director->mainLoop();
             cocos2d::Director::activateDirector(nullptr);
         }
     });
-
+    
     cocos2d::PoolManager::getInstance()->getCurrentPool()->clear();
-
-/*
-    cocos2d::Director* director = cocos2d::Director::getInstance();
-    [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];
-    director->mainLoop();
-*/
 }
-
 @end
 
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_IOS
