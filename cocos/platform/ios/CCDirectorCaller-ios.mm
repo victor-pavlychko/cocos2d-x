@@ -111,11 +111,22 @@ static id s_sharedDirectorCaller;
                       
 -(void) doCaller: (id) sender
 {
+    const size_t frameSkip = 3;
+    static size_t frameCounter = 0;
+    frameCounter = (frameCounter + 1) % frameSkip;
+    
     bool isDefaultRunLoopMode = [[[NSRunLoop currentRunLoop] currentMode] isEqualToString:NSDefaultRunLoopMode];
     UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
     
-    cocos2d::Director::enumerateDirectors([isDefaultRunLoopMode, keyWindow](cocos2d::Director *director)
+    size_t directorIndex = 0;
+    cocos2d::Director::enumerateDirectors([isDefaultRunLoopMode, keyWindow, &directorIndex](cocos2d::Director *director)
     {
+        size_t directorFrameCounter = (frameCounter + directorIndex++) % frameSkip;
+        if (!isDefaultRunLoopMode && directorFrameCounter)
+        {
+            return;
+        }
+        
         CCEAGLView *eaglView = (CCEAGLView *)director->getOpenGLView()->getEAGLView();
         if ([eaglView window]  /*&& (isDefaultRunLoopMode || director->isPriority)*/)
         {
