@@ -75,6 +75,7 @@ NS_CC_BEGIN
 // FIXME: it should be a Director ivar. Move it there once support for multiple directors is added
 
 // singleton stuff
+static int s_DirectorCount = 0;
 static DisplayLinkDirector *s_SharedDirector = nullptr;
 static std::set<Director *> s_RegisteredDirectors;
 
@@ -174,6 +175,7 @@ void DirectorSharegroup::prepareSharegroup()
 
 Director::Director(): _openGLView(nullptr), poolManager(nullptr)
 {
+    ++s_DirectorCount;
 }
 
 bool Director::init(void)
@@ -1063,6 +1065,8 @@ void Director::end()
 
 void Director::purgeDirector()
 {
+    --s_DirectorCount;
+    
     // cleanup scheduler
     getScheduler()->unscheduleAll();
     
@@ -1092,35 +1096,38 @@ void Director::purgeDirector()
     CC_SAFE_RELEASE_NULL(_drawnBatchesLabel);
     CC_SAFE_RELEASE_NULL(_drawnVerticesLabel);
 
-    // purge bitmap cache
-    FontFNT::purgeCachedData();
+    if (s_DirectorCount == 0)
+    {
+        // purge bitmap cache
+        FontFNT::purgeCachedData();
 
-    FontFreeType::shutdownFreeType();
+        FontFreeType::shutdownFreeType();
 
-    // purge all managed caches
-    
+        // purge all managed caches
+        
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #elif _MSC_VER >= 1400 //vs 2005 or higher
 #pragma warning (push)
 #pragma warning (disable: 4996)
 #endif
-    DrawPrimitives::free();
+        DrawPrimitives::free();
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
 #pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #elif _MSC_VER >= 1400 //vs 2005 or higher
 #pragma warning (pop)
 #endif
-    AnimationCache::destroyInstance();
-    SpriteFrameCache::destroyInstance();
-    GLProgramCache::destroyInstance();
-    GLProgramStateCache::destroyInstance();
-    FileUtils::destroyInstance();
+        AnimationCache::destroyInstance();
+        SpriteFrameCache::destroyInstance();
+        GLProgramCache::destroyInstance();
+        GLProgramStateCache::destroyInstance();
+        FileUtils::destroyInstance();
 
-    // cocos2d-x specific data structures
-    UserDefault::destroyInstance();
-    
-    GL::invalidateStateCache();
+        // cocos2d-x specific data structures
+        UserDefault::destroyInstance();
+        
+        GL::invalidateStateCache();
+    }
     
     _sharegroup->release();
 
