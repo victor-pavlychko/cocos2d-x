@@ -161,6 +161,14 @@ const std::set<Director *> &Director::allRegisteredDirectors()
 }
 // victor@timecode: end
 
+DirectorSharegroup::DirectorSharegroup()
+    : _textureCache(nullptr)
+    , _programCache(nullptr)
+{
+    static uint64_t g_instanceId = 0;
+    _instanceId = ++g_instanceId;
+}
+
 DirectorSharegroup::~DirectorSharegroup()
 {
     destroyProgramCache();

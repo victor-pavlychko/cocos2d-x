@@ -96,15 +96,19 @@ enum class MATRIX_STACK_TYPE
 class CC_DLL DirectorSharegroup : public Ref
 {
 public:
-    DirectorSharegroup(): _textureCache(nullptr), _programCache(nullptr) {}
+    DirectorSharegroup();
     virtual ~DirectorSharegroup();
     
+    uint64_t getInstanceId() { return _instanceId; }
+
     void prepareSharegroup();
 
     TextureCache *getTextureCache() { return _textureCache; }
     GLProgramCache* getProgramCache();
-
+    
 private:
+    uint64_t _instanceId;
+
     //texture cache belongs to this sharegroup
     TextureCache *_textureCache;
 
